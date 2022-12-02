@@ -1,3 +1,19 @@
+// COMPLETED
+// - activatespawner mechanic
+// - animatearmorstand mechanic
+// - armanimation mechanic
+// - arrowvolley mechanic
+// - aura mechanic
+// - auraremove mechanic
+// - barcreatemechanic
+// - barset mechanic
+// - basedamage mechanic
+// - blackscreen mechanic
+// - blockdestabilize mechanic
+// - blockmask mechanic
+// - blockphysics mechanic
+// - blockunmask mechanic
+
 import materialTypes from "./materials.js";
 
 /**
@@ -1010,6 +1026,11 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
                     ...fieldTemplates.int,
                     aliases: ["r"],
                     description: "The radius to unmask blocks in."
+                },
+                shape: {
+                    ...fieldTemplates.maskShapes,
+                    aliases: ["s"],
+                    description: "The shape to unmask blocks in."
                 }
             }
         },
@@ -1177,6 +1198,7 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
                     description: "The duration of the mask in ticks."
                 },
                 shape: {
+                    ...fieldTemplates.maskShapes,
                     aliases: ["s"],
                     description: "The shape of the mask."
                 },
