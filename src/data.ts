@@ -92,12 +92,17 @@ const maxInt = 2147483647;
  *
  * @param list A list of strings.
  * @param caseSensitive Whether the validation should be case sensitive.
- * @returns
  */
-const listTypeField = (list: string[], caseSensitive: boolean = false) => ({
-    completions: list,
-    validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
-});
+const listTypeField = (list: string[], caseSensitive: boolean = false, defaultValue?: string) => {
+    const output: HolderField = {
+        completions: list,
+        validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
+    };
+    if (defaultValue !== undefined) {
+        output.default = defaultValue;
+    }
+    return output;
+};
 
 /**
  * A set of templates for fields, to be used using spread syntax.
@@ -112,8 +117,14 @@ const fieldTemplates = {
         validator: (value: string) => !Number.isNaN(parseInt(value))
     },
     // Maybe merge both of these into one?
-    booleanDefaultTrue: listTypeField(["true", "false"]),
-    booleanDefaultFalse: listTypeField(["false", "true"]),
+    booleanDefaultTrue: {
+        ...listTypeField(["true", "false"]),
+        default: true
+    },
+    booleanDefaultFalse: {
+        ...listTypeField(["false", "true"]),
+        default: false
+    },
     vector: {
         description: "A vector, in the format x,y,z.",
         placeholder: "${1:0},${2:0},${3:0}",
@@ -139,16 +150,14 @@ const fieldTemplates = {
         description: "A meta-skill, or an inline skill."
     },
     barColor: {
-        ...listTypeField(bossbarColors, true),
+        ...listTypeField(bossbarColors, true, "RED"),
         aliases: ["bartimercolor"],
-        description: `The color of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarColors, "or")}.`,
-        placeholder: "RED"
+        description: `The color of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarColors, "or")}.`
     },
     barStyle: {
-        ...listTypeField(bossbarStyles, true),
+        ...listTypeField(bossbarStyles, true, "SOLID"),
         aliases: ["bartimerstyle"],
-        description: `The style of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarStyles, "or")}.`,
-        placeholder: "SOLID"
+        description: `The style of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarStyles, "or")}.`
     },
     material: {
         ...listTypeField(materialTypes),
@@ -159,6 +168,9 @@ const fieldTemplates = {
     }
 };
 
+/**
+ * A collection of functions that generate a field dynamically from inputs.
+ */
 const dynamicTemplates = {
     intRange: (min: number, max: number): HolderField => ({
         description: `An integer between ${min} and ${max}.`,
@@ -186,18 +198,18 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
         charges: {
             aliases: ["c"],
             description: "The number of charges to apply.",
-            placeholder: 0
+            default: 0
         },
         duration: {
             aliases: ["ticks", "t", "d", "time"],
             description: "The duration of the aura in ticks.",
-            placeholder: 200
+            default: 200
         },
         maxStacks: {
             ...fieldTemplates.int,
             aliases: ["ms"],
             description: "How many times the aura stacks on the same targeted entity if applied multiple times.",
-            placeholder: 1
+            default: 1
         },
         mergeall: {
             ...fieldTemplates.booleanDefaultFalse,
@@ -243,7 +255,8 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
              * According to the source code, this defaults to the auraname if unspecified.
              * However, I'm too lazy to do that.
              */
-            description: "The text to display on the bossbar timer. Defaults to the aura's name."
+            description: "The text to display on the bossbar timer. Defaults to the aura's name.",
+            default: "<skill.var.aura-name>"
         },
         bartimercolor: fieldTemplates.barColor,
         bartimerstyle: fieldTemplates.barStyle,
@@ -402,6 +415,12 @@ interface HolderField {
      */
     completions?: string[];
     pluginReqs?: PluginReq[];
+    /**
+     * A default value for the field. If this is set, and the user inserts this value as the field's value, a warning would be sent suggesting the user to remove the unnecessary field.
+     *
+     * Don't worry about using booleans, numbers, or strings as the default value.
+     */
+    default?: any;
 }
 
 /**
@@ -598,7 +617,8 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
             fields: {
                 spawner: {
                     aliases: ["spawners", 's"'],
-                    description: "The spawner to activate."
+                    description: "The spawner to activate.",
+                    default: ""
                 }
             }
         },
@@ -984,7 +1004,14 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         blockUnmask: {
             aliases: ["effect:blockUnmask", "e:blockunmask"],
-            description: "Unmasks any nearby blocks that have been masked."
+            description: "Unmasks any nearby blocks that have been masked.",
+            fields: {
+                radius: {
+                    ...fieldTemplates.int,
+                    aliases: ["r"],
+                    description: "The radius to unmask blocks in."
+                }
+            }
         },
         setlevel: {
             aliases: ["modifylevel"],
@@ -1388,22 +1415,22 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
                 amount: {
                     ...fieldTemplates.int,
                     description: "The amount of arrows to shoot.",
-                    placeholder: 20
+                    default: 20
                 },
                 spread: {
                     ...fieldTemplates.int,
                     description: "How spread out the arrows are.",
-                    placeholder: 45
+                    default: 45
                 },
                 fireTicks: {
                     ...fieldTemplates.int,
                     description: "How long the arrows should be on fire for.",
-                    placeholder: 0
+                    default: 0
                 },
                 velocity: {
                     ...fieldTemplates.float,
                     description: "How fast the arrows should travel.",
-                    placeholder: 20.0
+                    default: 20
                 },
                 removeDelay: {
                     ...fieldTemplates.int,
