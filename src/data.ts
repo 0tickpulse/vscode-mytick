@@ -10,6 +10,30 @@ const includesCaseInsensitive = (value: string, array: string[]) => {
 };
 
 /**
+ * Returns a copy of an object with certain keys excluded.
+ * @param obj THe base object to copy.
+ * @param keys The keys to exclude.
+ */
+const excludeKeys = (obj: { [key: string]: any }, keys: string[]) => {
+    const newObj = { ...obj };
+    keys.forEach((key) => delete newObj[key]);
+    return newObj;
+};
+
+/**
+ * Formats a list of strings into a string that can be used in a documentation entry.
+ * @param list The list.
+ * @param final A final word, such as "and" or "or".
+ */
+const formatListForDoc = (list: string[], final: string = "and") =>
+    list.map((item, index) => {
+        if (index === list.length - 1) {
+            return `${final} ${item}`;
+        }
+        return item;
+    });
+
+/**
  * A list of plugins, modules, etc. that some holders and fields require.
  *
  * For example, the `element` field in `DamagingMechanic` requires {@link PluginReq.mythicMobsPremium}.
@@ -75,7 +99,10 @@ const listTypeField = (list: string[], caseSensitive: boolean = false) => ({
     validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
 });
 
-const templates = {
+/**
+ * A set of templates for fields, to be used using spread syntax.
+ */
+const fieldTemplates = {
     spawner: {
         completions: [],
         placeholder: "<spawner>"
@@ -112,20 +139,23 @@ const templates = {
         description: "A meta-skill, or an inline skill."
     },
     barColor: {
-        ...listTypeField(bossbarColors),
+        ...listTypeField(bossbarColors, true),
         aliases: ["bartimercolor"],
-        description: "The color of the bossbar. Can be `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE`, or `WHITE`.",
+        description: `The color of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarColors, "or")}.`,
         placeholder: "RED"
     },
     barStyle: {
-        ...listTypeField(bossbarStyles),
+        ...listTypeField(bossbarStyles, true),
         aliases: ["bartimerstyle"],
-        description: `The style of the bossbar. Can be ${bossbarStyles.map((i: string) => `\`${i}\``)}.`,
+        description: `The style of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarStyles, "or")}.`,
         placeholder: "SOLID"
     },
     material: {
         ...listTypeField(materialTypes),
         description: "Any material."
+    },
+    maskShapes: {
+        ...listTypeField(["sphere", "cube"])
     }
 };
 
@@ -147,6 +177,7 @@ const dynamicTemplates = {
 };
 
 const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } = {
+    /** Fields for auras */
     auraFields: {
         auraname: {
             aliases: ["buffname", "debuffname"],
@@ -163,24 +194,24 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
             placeholder: 200
         },
         maxStacks: {
-            ...templates.int,
+            ...fieldTemplates.int,
             aliases: ["ms"],
             description: "How many times the aura stacks on the same targeted entity if applied multiple times.",
             placeholder: 1
         },
         mergeall: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["ma"],
             description:
                 "Merges all of the same auras applied by any and all entities to another into one aura (Prevents multiple mobs from being able to stack an aura multiple times on the same entity)"
         },
         overwriteall: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["overwrite", "oa"],
             description: "When applied, stops all of the same auras applied on the target and replaces them with the new aura."
         },
         overwritesamecaster: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["osc", "oc"],
             // TODO Ambiguous description
             description: "When applied, stops all of the same auras applied on the target by the same caster and replaces them with the new aura"
@@ -190,19 +221,19 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
              * According to the source code, this will be set to true if mergeAll, overwriteAll, and overwriteSameCaster are all set to false.
              * However, I'm too lazy to do that.
              */
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["msc", "mc"],
             description:
                 "Merges all of the same auras applied by one entity to another into one aura (Prevents a mob from being able to stack an aura multiple times on the same entity)"
         },
         refreshduration: {
-            ...templates.booleanDefaultTrue,
+            ...fieldTemplates.booleanDefaultTrue,
             aliases: ["rd"],
             description:
                 "Makes the aura's duration refresh to the amount defined in the mechanic should the entity have the same aura applied to it again"
         },
         showbartimer: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["bartimer", "bt"],
             description: "Shows a bossbar timer for the aura."
         },
@@ -214,45 +245,45 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
              */
             description: "The text to display on the bossbar timer. Defaults to the aura's name."
         },
-        bartimercolor: templates.barColor,
-        bartimerstyle: templates.barStyle,
+        bartimercolor: fieldTemplates.barColor,
+        bartimerstyle: fieldTemplates.barStyle,
         cancelongivedamage: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["cogd"],
             description: "Cancels the aura if the entity with the aura deals any damage to another entity."
         },
         cancelontakedamage: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["cotd"],
             description: "Cancels the aura if the entity with the aura takes any damage."
         },
         cancelondeath: {
-            ...templates.booleanDefaultTrue,
+            ...fieldTemplates.booleanDefaultTrue,
             aliases: ["cod"],
             description: "Cancels the aura if the entity with the aura dies."
         },
         cancelonteleport: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["cot"],
             description: "Cancels the aura if the entity with the aura teleports."
         },
         cancelonchangeworld: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["cocw"],
             description: "Cancels the aura if the entity with the aura changes worlds (most of the time, this applies to players)."
         },
         cancelonskilluse: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["cosu"],
             description: "Cancels the aura if the entity with the aura uses another skill."
         },
         cancelonquit: {
-            ...templates.booleanDefaultTrue,
+            ...fieldTemplates.booleanDefaultTrue,
             aliases: ["coq"],
             description: "Cancels the aura if the entity with the aura quits the server (almost entirely applies to players)."
         },
         doendskillonterminate: {
-            ...templates.booleanDefaultTrue,
+            ...fieldTemplates.booleanDefaultTrue,
             /**
              * What does "ares" mean?
              * I'm too lazy to find out.
@@ -261,17 +292,17 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
             description: "Runs the end skill of the aura even when the aura is cancelled."
         },
         onstartskill: {
-            ...templates.metaskill,
+            ...fieldTemplates.metaskill,
             aliases: ["onstart, os"],
             description: "The meta-skill to run when the aura is first applied."
         },
         ontickskill: {
-            ...templates.metaskill,
+            ...fieldTemplates.metaskill,
             aliases: ["ontick, ot"],
             description: "The meta-skill to run every set interval (determined by the `interval` field) while the aura is active."
         },
         onendskill: {
-            ...templates.metaskill,
+            ...fieldTemplates.metaskill,
             aliases: ["onend, oe"],
             description: "The meta-skill to run when the aura ends."
         }
@@ -292,30 +323,30 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
             description: "The value of the bar (how filled it is). This is a floating point number between 0 and 1.",
             placeholder: 1
         },
-        color: templates.barColor,
-        style: templates.barStyle
+        color: fieldTemplates.barColor,
+        style: fieldTemplates.barStyle
     },
     /**
      * Represents fields that are in classes that extend DamagingMechanic.
      */
     damagingMechanic: {
         ignorearmor: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["ia"],
             description: "Whether or not armor should be ignored when calculating damage."
         },
         preventimmunity: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["pi"],
             description: "If set to true, the damage event would not cause any immunity ticks."
         },
         preventknockback: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["pkb", "pk"],
             description: "If set to true, the damage event would not cause any knockback."
         },
         ignoreenchantments: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["ignoreenchants", "ie"],
             description: "Whether or not enchantments should be ignored when calculating damage."
         },
@@ -406,48 +437,48 @@ interface Holder {
 export const defaultFields = {
     mechanics: {
         cooldown: {
-            ...templates.seconds,
+            ...fieldTemplates.seconds,
             aliases: ["cd"]
         },
         delay: {
-            ...templates.duration
+            ...fieldTemplates.duration
         },
         targetinterval: {
-            ...templates.float,
+            ...fieldTemplates.float,
             aliases: ["targeti"],
             description: "The interval (in ticks) at which the skill will run between targets."
         },
         repeat: {
-            ...templates.int,
+            ...fieldTemplates.int,
             description:
                 "The number of times the skill will repeat, not including when it runs normally (`repeat=2` means it'll run, and then repeat two times, therefore running a total of 3 times)."
         },
         repeatinterval: {
-            ...templates.duration,
+            ...fieldTemplates.duration,
             aliases: ["repeati"],
             description: "The interval (in ticks) at which the skill will repeat."
         },
         power: {
-            ...templates.float,
+            ...fieldTemplates.float,
             description:
                 "The power of the skill More information here: [Wiki entry: Power Scaling](https://git.lumine.io/mythiccraft/MythicMobs/-/wikis/Mobs/Power)."
         },
         powersplitbetweentargets: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["powersplit", "splitpower"],
             description: "Whether or not to split the power between targets. If this is true, the power will be divided by the number of targets."
         },
         forcesync: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["sync"],
             description: "Whether or not to force the skill to run synchronously. This is useful for skills that need to run on the main thread."
         },
         targetisorigin: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             description: "Changes the origin to whatever targeter is supplied."
         },
         sourceisorigin: {
-            ...templates.booleanDefaultFalse,
+            ...fieldTemplates.booleanDefaultFalse,
             aliases: ["castfromorigin", "fromorigin", "fo"],
             description: "Run the skill from the origin"
         },
@@ -593,7 +624,7 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
             fields: {
                 ...prefilledFields.damagingMechanic,
                 multiplier: {
-                    ...templates.float,
+                    ...fieldTemplates.float,
                     aliases: ["m"],
                     description: "The multiplier to apply to the mob's damage stat.",
                     placeholder: 1
@@ -709,41 +740,41 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
             aliases: ["animateas", "animas"],
             description: "Makes an armor stand assume a pose over a specified time.",
             fields: {
-                duration: templates.duration,
+                duration: fieldTemplates.duration,
                 smart: {
-                    ...templates.booleanDefaultTrue,
+                    ...fieldTemplates.booleanDefaultTrue,
                     description: "If true, the animation will play smoother."
                 },
                 ignoreEmpty: {
-                    ...templates.booleanDefaultTrue,
+                    ...fieldTemplates.booleanDefaultTrue,
                     description: "If true, the animation will ignore unspecified slots."
                 },
                 usedegrees: {
-                    ...templates.booleanDefaultTrue,
+                    ...fieldTemplates.booleanDefaultTrue,
                     description: "If true, the animation will use degrees instead of radians."
                 },
                 head: {
-                    ...templates.vector,
+                    ...fieldTemplates.vector,
                     description: "A vector representing the head's rotation."
                 },
                 body: {
-                    ...templates.vector,
+                    ...fieldTemplates.vector,
                     description: "A vector representing the body's rotation."
                 },
                 leftarm: {
-                    ...templates.vector,
+                    ...fieldTemplates.vector,
                     description: "A vector representing the left arm's rotation."
                 },
                 rightarm: {
-                    ...templates.vector,
+                    ...fieldTemplates.vector,
                     description: "A vector representing the right arm's rotation."
                 },
                 leftleg: {
-                    ...templates.vector,
+                    ...fieldTemplates.vector,
                     description: "A vector representing the left leg's rotation."
                 },
                 rightleg: {
-                    ...templates.vector,
+                    ...fieldTemplates.vector,
                     description: "A vector representing the right leg's rotation."
                 }
             }
@@ -861,7 +892,7 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
                     description: 'The aura to remove. If set to "any", all auras will be removed.'
                 },
                 stacks: {
-                    ...templates.int,
+                    ...fieldTemplates.int,
                     aliases: ["s"],
                     description: `The number of stacks to remove. Defaults to ${maxInt}.`
                 }
@@ -1095,26 +1126,26 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
             description: "Temporarily masks a block as a different block.",
             fields: {
                 material: {
-                    ...templates.material,
+                    ...fieldTemplates.material,
                     aliases: ["mat", "m"]
                 },
                 radius: {
-                    ...templates.float,
+                    ...fieldTemplates.float,
                     aliases: ["r"],
                     description: "The radius of the mask."
                 },
                 radiusy: {
-                    ...templates.float,
+                    ...fieldTemplates.float,
                     aliases: ["ry"],
                     description: "The radius of the mask in the Y/vertical axis. Defaults to the radius."
                 },
                 noise: {
-                    ...templates.float,
+                    ...fieldTemplates.float,
                     aliases: ["n"],
                     description: "The amount of noise to add to the mask."
                 },
                 duration: {
-                    ...templates.duration,
+                    ...fieldTemplates.duration,
                     aliases: ["d"],
                     description: "The duration of the mask in ticks."
                 },
@@ -1123,12 +1154,12 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
                     description: "The shape of the mask."
                 },
                 noair: {
-                    ...templates.booleanDefaultTrue,
+                    ...fieldTemplates.booleanDefaultTrue,
                     aliases: ["na"],
                     description: "If true, the mask will not affect air blocks."
                 },
                 onlyair: {
-                    ...templates.booleanDefaultFalse,
+                    ...fieldTemplates.booleanDefaultFalse,
                     aliases: ["oa"],
                     description: "If true, the mask will only affect air blocks."
                 }
@@ -1158,13 +1189,9 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
             aliases: ["effect:blackScreen", "e:blackScreen"],
             description: "Causes the player's screen to black out.",
             fields: {
-                ...Object.fromEntries(
-                    Object.entries(prefilledFields.auraFields).filter(
-                        ([key, value]) => !["auraname", "maxstacks", "refreshduration", "interval"].includes(key)
-                    )
-                ),
+                ...excludeKeys(prefilledFields.auraFields, ["auraname", "maxstacks", "refreshduration", "interval"]),
                 duration: {
-                    ...templates.duration
+                    ...fieldTemplates.duration
                 },
                 cancel: {
                     aliases: ["c"],
@@ -1359,27 +1386,27 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
             description: "Shoots a volley of arrows.",
             fields: {
                 amount: {
-                    ...templates.int,
+                    ...fieldTemplates.int,
                     description: "The amount of arrows to shoot.",
                     placeholder: 20
                 },
                 spread: {
-                    ...templates.int,
+                    ...fieldTemplates.int,
                     description: "How spread out the arrows are.",
                     placeholder: 45
                 },
                 fireTicks: {
-                    ...templates.int,
+                    ...fieldTemplates.int,
                     description: "How long the arrows should be on fire for.",
                     placeholder: 0
                 },
                 velocity: {
-                    ...templates.float,
+                    ...fieldTemplates.float,
                     description: "How fast the arrows should travel.",
                     placeholder: 20.0
                 },
                 removeDelay: {
-                    ...templates.int,
+                    ...fieldTemplates.int,
                     description: "How long the arrows should last for before they are removed.",
                     placeholder: 200
                 }
