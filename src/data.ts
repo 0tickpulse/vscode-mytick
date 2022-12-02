@@ -16,6 +16,23 @@
 
 import materialTypes from "./materials.js";
 
+type LooseString = string | boolean | number;
+const looseStringToString = (value: LooseString) => {
+    if (typeof value === "string") {
+        return value;
+    }
+    if (typeof value === "boolean") {
+        return value ? "true" : "false";
+    }
+    return value.toString();
+};
+const matchLooseString = (string: string, value: LooseString) => {
+    if (typeof value === "number") {
+        return parseFloat(string) === value;
+    }
+    return string === looseStringToString(value);
+};
+
 /**
  * Returns whether an array of strings contains a given string, case insensitive.
  * @param value The value to check.
@@ -106,10 +123,15 @@ const maxInt = 2147483647;
  * A utility function to quickly generate field data for fields that take in elements of a list.
  * For example:
  *
+ * ```ts
+ * listTypeField(["foo", "bar"], true, "foo");
+ * // { completions: ["foo", "bar"], validator: (value: string) => value in ["foo", "bar"], default: "foo" }
+ * ```
+ *
  * @param list A list of strings.
  * @param caseSensitive Whether the validation should be case sensitive.
  */
-const listTypeField = (list: string[], caseSensitive: boolean = false, defaultValue?: string) => {
+const listTypeField = (list: string[], caseSensitive: boolean = false, defaultValue?: string): HolderField => {
     const output: HolderField = {
         completions: list,
         validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
@@ -182,7 +204,7 @@ const fieldTemplates = {
     maskShapes: {
         ...listTypeField(["sphere", "cube"])
     }
-};
+} satisfies { [key: string]: HolderField };
 
 /**
  * A collection of functions that generate a field dynamically from inputs.
@@ -202,9 +224,9 @@ const dynamicTemplates = {
             return !Number.isNaN(parsed) && parsed >= min && parsed <= max;
         }
     })
-};
+} satisfies { [key: string]: (...args: any[]) => HolderField };
 
-const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } = {
+const prefilledFields = {
     /** Fields for auras */
     auraFields: {
         auraname: {
@@ -392,7 +414,7 @@ const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } =
             completions: damageCauses
         }
     }
-};
+} satisfies { [key: string]: { [fieldName: string]: HolderField } };
 
 /**
  * Represents a field of a mechanic, targeter, trigger, or condition.
@@ -419,7 +441,7 @@ interface HolderField {
     /**
      * A placeholder for the field when inserted as a snippet. If your field has a default value, you should use that as the placeholder.
      */
-    placeholder?: string | boolean | number;
+    placeholder?: LooseString;
     /**
      * A function that validates the field's value. If the function returns false, the value is invalid.
      * When invalid, an error will display.
@@ -436,7 +458,7 @@ interface HolderField {
      *
      * Don't worry about using booleans, numbers, or strings as the default value.
      */
-    default?: any;
+    default?: LooseString;
 }
 
 /**
@@ -521,8 +543,10 @@ export const defaultFields = {
             // TODO: Origin should tab complete and validate with targeters
             description: "The origin of the skill."
         }
-    }
-};
+    },
+    conditions: {},
+    targeters: {}
+} satisfies { mechanics: { [key: string]: HolderField }; conditions: { [key: string]: HolderField }; targeters: { [key: string]: HolderField } };
 
 export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: string]: Holder }; conditions: { [name: string]: Holder } } = {
     mechanics: {
