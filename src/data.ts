@@ -1,3 +1,80 @@
+import materialTypes from "./materials.js";
+
+/**
+ * Returns whether an array of strings contains a given string, case insensitive.
+ * @param value The value to check.
+ * @param array The array to check against.
+ */
+const includesCaseInsensitive = (value: string, array: string[]) => {
+    return array.some((item) => item.toLowerCase() === value.toLowerCase());
+};
+
+/**
+ * A list of plugins, modules, etc. that some holders and fields require.
+ *
+ * For example, the `element` field in `DamagingMechanic` requires {@link PluginReq.mythicMobsPremium}.
+ *
+ * The value should be how it should be displayed in text.
+ */
+enum PluginReq {
+    mythicMobsPremium = "MythicMobs premium",
+    mythicCrucible = "MythicCrucible",
+    mythicEnchants = "MythicEnchants",
+    mythicAdvancements = "MythicAdvancements",
+    modelEngine = "ModelEngine"
+}
+
+const bossbarColors = ["PINK", "BLUE", "RED", "GREEN", "YELLOW", "PURPLE", "WHITE"];
+const bossbarStyles = ["SOLID", "SEGMENTED_6", "SEGMENTED_10", "SEGMENTED_12", "SEGMENTED_20"];
+
+const damageCauses = [
+    "contact",
+    "entity_attack",
+    "entity_sweep_attack",
+    "projectile",
+    "suffocation",
+    "fall",
+    "fire",
+    "fire_tick",
+    "melting",
+    "lava",
+    "drowning",
+    "block_explosion",
+    "entity_explosion",
+    "void",
+    "lightning",
+    "suicide",
+    "starvation",
+    "poison",
+    "magic",
+    "wither",
+    "falling_block",
+    "thorns",
+    "dragon_breath",
+    "custom",
+    "fly_into_wall",
+    "hot_floor",
+    "cramming",
+    "dryout",
+    "freeze",
+    "sonic_boom"
+];
+
+const maxInt = 2147483647;
+
+/**
+ * A utility function to quickly generate field data for fields that take in elements of a list.
+ * For example:
+ *
+ * @param list A list of strings.
+ * @param caseSensitive Whether the validation should be case sensitive.
+ * @returns
+ */
+const listTypeField = (list: string[], caseSensitive: boolean = false) => ({
+    completions: list,
+    validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
+});
+
 const templates = {
     spawner: {
         completions: [],
@@ -7,17 +84,17 @@ const templates = {
         description: "The duration, in ticks (one tick is 0.05 seconds, there's 20 ticks in a second).",
         validator: (value: string) => !Number.isNaN(parseInt(value))
     },
-    booleanDefaultTrue: {
-        completions: ["true", "false"],
-        placeholder: true
-    },
-    booleanDefaultFalse: {
-        completions: ["false", "true"],
-        placeholder: false
-    },
+    // Maybe merge both of these into one?
+    booleanDefaultTrue: listTypeField(["true", "false"]),
+    booleanDefaultFalse: listTypeField(["false", "true"]),
     vector: {
         description: "A vector, in the format x,y,z.",
-        placeholder: "0,0,0"
+        placeholder: "${1:0},${2:0},${3:0}",
+        // Needs testing
+        validator: (value: string) => {
+            const parts = value.split(",");
+            return parts.length === 3 && parts.every((part) => !Number.isNaN(parseFloat(part.trim())));
+        }
     },
     int: {
         description: "Any integer.",
@@ -35,28 +112,32 @@ const templates = {
         description: "A meta-skill, or an inline skill."
     },
     barColor: {
+        ...listTypeField(bossbarColors),
         aliases: ["bartimercolor"],
         description: "The color of the bossbar. Can be `PINK`, `BLUE`, `RED`, `GREEN`, `YELLOW`, `PURPLE`, or `WHITE`.",
-        validator: (value: string) => value in bossbarColors,
         placeholder: "RED"
     },
     barStyle: {
+        ...listTypeField(bossbarStyles),
         aliases: ["bartimerstyle"],
-        description: "The style of the bossbar. Can be `SOLID`, `SEGMENTED_6`, `SEGMENTED_10`, `SEGMENTED_12`, `SEGMENTED_20`.",
-        validator: (value: string) => value in bossbarStyles,
+        description: `The style of the bossbar. Can be ${bossbarStyles.map((i: string) => `\`${i}\``)}.`,
         placeholder: "SOLID"
+    },
+    material: {
+        ...listTypeField(materialTypes),
+        description: "Any material."
     }
 };
 
 const dynamicTemplates = {
-    intRange: (min: number, max: number): Field => ({
+    intRange: (min: number, max: number): HolderField => ({
         description: `An integer between ${min} and ${max}.`,
         validator: (value: string) => {
             const parsed = parseInt(value);
             return !Number.isNaN(parsed) && parsed >= min && parsed <= max;
         }
     }),
-    floatRange: (min: number, max: number): Field => ({
+    floatRange: (min: number, max: number): HolderField => ({
         description: `A floating point number between ${min} and ${max}.`,
         validator: (value: string) => {
             const parsed = parseFloat(value);
@@ -65,12 +146,7 @@ const dynamicTemplates = {
     })
 };
 
-const bossbarColors = ["PINK", "BLUE", "RED", "GREEN", "YELLOW", "PURPLE", "WHITE"];
-const bossbarStyles = ["SOLID", "SEGMENTED_6", "SEGMENTED_10", "SEGMENTED_12", "SEGMENTED_20"];
-
-const maxInt = 2147483647;
-
-const prefilledFields = {
+const prefilledFields: { [key: string]: { [fieldName: string]: HolderField } } = {
     auraFields: {
         auraname: {
             aliases: ["buffname", "debuffname"],
@@ -218,13 +294,51 @@ const prefilledFields = {
         },
         color: templates.barColor,
         style: templates.barStyle
+    },
+    /**
+     * Represents fields that are in classes that extend DamagingMechanic.
+     */
+    damagingMechanic: {
+        ignorearmor: {
+            ...templates.booleanDefaultFalse,
+            aliases: ["ia"],
+            description: "Whether or not armor should be ignored when calculating damage."
+        },
+        preventimmunity: {
+            ...templates.booleanDefaultFalse,
+            aliases: ["pi"],
+            description: "If set to true, the damage event would not cause any immunity ticks."
+        },
+        preventknockback: {
+            ...templates.booleanDefaultFalse,
+            aliases: ["pkb", "pk"],
+            description: "If set to true, the damage event would not cause any knockback."
+        },
+        ignoreenchantments: {
+            ...templates.booleanDefaultFalse,
+            aliases: ["ignoreenchants", "ie"],
+            description: "Whether or not enchantments should be ignored when calculating damage."
+        },
+        element: {
+            aliases: ["e", "damagetype", "type"],
+            description:
+                "The element of the damage. This is used in correspondence with [Damage Modifiers](https://git.lumine.io/mythiccraft/MythicMobs/-/wikis/Mobs/DamageModifiers).",
+            pluginReqs: [PluginReq.mythicMobsPremium]
+        },
+        damagecause: {
+            aliases: ["dc", "cause"],
+            description:
+                "The cause of the damage. This is used in correspondence with [Damage Modifiers](https://git.lumine.io/mythiccraft/MythicMobs/-/wikis/Mobs/DamageModifiers).",
+            completions: damageCauses
+        }
     }
 };
 
 /**
  * Represents a field of a mechanic, targeter, trigger, or condition.
  * A skill can have multiple fields, and each field can have a single value.
- * An example:
+ *
+ * # Example
  *
  * ```yaml
  * - projectile{onTick=MySkill}
@@ -233,7 +347,7 @@ const prefilledFields = {
  * In this example, the field `onTick` has the value `MySkill`.
  *
  */
-interface Field {
+interface HolderField {
     /**
      * Any aliases for the field. Should not contain the "main" name.
      */
@@ -256,11 +370,37 @@ interface Field {
      * A list of completions that will be displayed when the field is being typed.
      */
     completions?: string[];
+    pluginReqs?: PluginReq[];
 }
+
+/**
+ * A holder is a mechanic, targeter, trigger, or condition. It can have fields, and each field can have a single value.
+ *
+ * # Example
+ *
+ * ```yaml
+ * - projectile{onTick=MySkill} @Forward{f=10}
+ * ```
+ *
+ * In this example, there's two holders: `projectile` and `Forward`.
+ *
+ * * `projectile` has a field `onTick` with the value `MySkill`.
+ * * `Forward` has a field `f` with the value `10`.
+ */
 interface Holder {
+    /**
+     * Any aliases for the holder. Should not contain the "main" name.
+     */
     aliases: string[];
+    /**
+     * A description for the holder. This is used for hover information. You should use this to explain what the holder does, and any remarks or comments about it.
+     */
     description?: string;
-    fields?: { [key: string]: Field };
+    /**
+     * A list of valid fields that the holder can have. Keep in mind that you do not need to include {@link defaultFields} here.
+     */
+    fields?: { [key: string]: HolderField };
+    pluginReqs?: PluginReq[];
 }
 
 export const defaultFields = {
@@ -279,7 +419,8 @@ export const defaultFields = {
         },
         repeat: {
             ...templates.int,
-            description: "The number of times the skill will repeat, not including when it runs normally (`repeat=2` means it'll run, and then repeat two times, therefore running a total of 3 times)."
+            description:
+                "The number of times the skill will repeat, not including when it runs normally (`repeat=2` means it'll run, and then repeat two times, therefore running a total of 3 times)."
         },
         repeatinterval: {
             ...templates.duration,
@@ -288,7 +429,8 @@ export const defaultFields = {
         },
         power: {
             ...templates.float,
-            description: "The power of the skill More information here: [Wiki entry: Power Scaling](https://git.lumine.io/mythiccraft/MythicMobs/-/wikis/Mobs/Power)."
+            description:
+                "The power of the skill More information here: [Wiki entry: Power Scaling](https://git.lumine.io/mythiccraft/MythicMobs/-/wikis/Mobs/Power)."
         },
         powersplitbetweentargets: {
             ...templates.booleanDefaultFalse,
@@ -447,7 +589,16 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         baseDamage: {
             aliases: ["bd", "weaponDamage", "wd"],
-            description: "Deals a percent of the mob's damage stat as damage."
+            description: "Deals a percent of the mob's damage stat as damage.",
+            fields: {
+                ...prefilledFields.damagingMechanic,
+                multiplier: {
+                    ...templates.float,
+                    aliases: ["m"],
+                    description: "The multiplier to apply to the mob's damage stat.",
+                    placeholder: 1
+                }
+            }
         },
         goto: {
             aliases: ["pathto", "navigateto"],
@@ -941,7 +1092,47 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         blockMask: {
             aliases: ["effect:blockMask", "e:blockMask"],
-            description: "Temporarily masks a block as a different block."
+            description: "Temporarily masks a block as a different block.",
+            fields: {
+                material: {
+                    ...templates.material,
+                    aliases: ["mat", "m"]
+                },
+                radius: {
+                    ...templates.float,
+                    aliases: ["r"],
+                    description: "The radius of the mask."
+                },
+                radiusy: {
+                    ...templates.float,
+                    aliases: ["ry"],
+                    description: "The radius of the mask in the Y/vertical axis. Defaults to the radius."
+                },
+                noise: {
+                    ...templates.float,
+                    aliases: ["n"],
+                    description: "The amount of noise to add to the mask."
+                },
+                duration: {
+                    ...templates.duration,
+                    aliases: ["d"],
+                    description: "The duration of the mask in ticks."
+                },
+                shape: {
+                    aliases: ["s"],
+                    description: "The shape of the mask."
+                },
+                noair: {
+                    ...templates.booleanDefaultTrue,
+                    aliases: ["na"],
+                    description: "If true, the mask will not affect air blocks."
+                },
+                onlyair: {
+                    ...templates.booleanDefaultFalse,
+                    aliases: ["oa"],
+                    description: "If true, the mask will only affect air blocks."
+                }
+            }
         },
         blockWave: {
             aliases: ["effect:blockWave", "e:blockWave"],
@@ -965,7 +1156,21 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         blackScreen: {
             aliases: ["effect:blackScreen", "e:blackScreen"],
-            description: "Causes the player's screen to black out."
+            description: "Causes the player's screen to black out.",
+            fields: {
+                ...Object.fromEntries(
+                    Object.entries(prefilledFields.auraFields).filter(
+                        ([key, value]) => !["auraname", "maxstacks", "refreshduration", "interval"].includes(key)
+                    )
+                ),
+                duration: {
+                    ...templates.duration
+                },
+                cancel: {
+                    aliases: ["c"],
+                    description: "If true, will cancel any existing effects immediately."
+                }
+            }
         },
         OnJump: {
             aliases: [],
@@ -1049,7 +1254,8 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         raytraceTo: {
             aliases: [],
-            description: "Executes a skill with the result of a raytrace to the target location."
+            description: "Executes a skill with the result of a raytrace to the target location.",
+            pluginReqs: [PluginReq.mythicMobsPremium]
         },
         posearmorstand: {
             aliases: ["armorstandpose"],
@@ -1065,7 +1271,8 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         raytrace: {
             aliases: [],
-            description: "Executes a skill with the result of a raytrace."
+            description: "Executes a skill with the result of a raytrace.",
+            pluginReqs: [PluginReq.mythicMobsPremium]
         },
         undisguise: {
             aliases: ["disguiseRemove"],
