@@ -1,7 +1,7 @@
 import * as vscServer from "vscode-languageserver/node";
 import { YAMLDocument } from "./classes.js";
 
-let connection = vscServer.createConnection(vscServer.ProposedFeatures.all);
+const connection = vscServer.createConnection(vscServer.ProposedFeatures.all);
 
 const documents: vscServer.TextDocuments<YAMLDocument> = new vscServer.TextDocuments(YAMLDocument);
 let hasConfigurationCapability: boolean = false;
@@ -28,6 +28,7 @@ connection.onInitialize((params) => {
         }
     };
 });
+
 
 // documents.onDidChangeContent((change) => {
 //     validateTextDocument(change.document);
