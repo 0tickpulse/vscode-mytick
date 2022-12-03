@@ -13,7 +13,6 @@
 // - blockmask mechanic
 // - blockphysics mechanic
 // - blockunmask mechanic
-
 import materialTypes from "./materials.js";
 
 type LooseString = string | boolean | number;
@@ -67,6 +66,28 @@ const formatListForDoc = (list: string[], final: string = "and") =>
     });
 
 /**
+ * Returns a function that can be used for completions for a list of objects.
+ *
+ * For example:
+ *
+ * ```ts
+ * arrayCompletion(["foo", "bar"])("foo,b")
+ * // ["foo", "bar"]
+ * ```
+ *
+ * @param array The array.
+ * @returns
+ */
+const arrayCompletion = (array: string[]) => (input: string) => {
+    if (input === "") {
+        return array;
+    }
+    const split = input.split(",");
+    const last = split[split.length - 1];
+    return array.filter((item) => item.startsWith(last.trim())).map((item) => [...split.slice(0, -1), item].join(","));
+};
+
+/**
  * A list of plugins, modules, etc. that some holders and fields require.
  *
  * For example, the `element` field in `DamagingMechanic` requires {@link PluginReq.mythicMobsPremium}.
@@ -116,6 +137,27 @@ const damageCauses = [
     "freeze",
     "sonic_boom"
 ];
+const blockFaces = [
+    "DOWN",
+    "EAST",
+    "EAST_NORTH_EAST",
+    "EAST_SOUTH_EAST",
+    "NORTH",
+    "NORTH_EAST",
+    "NORTH_NORTH_EAST",
+    "NORTH_NORTH_WEST",
+    "NORTH_WEST",
+    "SELF",
+    "SOUTH",
+    "SOUTH_EAST",
+    "SOUTH_SOUTH_EAST",
+    "SOUTH_SOUTH_WEST",
+    "SOUTH_WEST",
+    "UP",
+    "WEST",
+    "WEST_NORTH_WEST",
+    "WEST_SOUTH_WEST"
+];
 
 const maxInt = 2147483647;
 
@@ -125,15 +167,15 @@ const maxInt = 2147483647;
  *
  * ```ts
  * listTypeField(["foo", "bar"], true, "foo");
- * // { completions: ["foo", "bar"], validator: (value: string) => value in ["foo", "bar"], default: "foo" }
+ * // { completions: () => ["foo", "bar"], validator: (value: string) => value in ["foo", "bar"], default: "foo" }
  * ```
  *
  * @param list A list of strings.
  * @param caseSensitive Whether the validation should be case sensitive.
  */
-const listTypeField = (list: string[], caseSensitive: boolean = false, defaultValue?: string): HolderField => {
+const listTypeField = (list: string[], caseSensitive: boolean = false, array: boolean = false, defaultValue?: string): HolderField => {
     const output: HolderField = {
-        completions: list,
+        completions: () => list,
         validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
     };
     if (defaultValue !== undefined) {
@@ -147,7 +189,6 @@ const listTypeField = (list: string[], caseSensitive: boolean = false, defaultVa
  */
 const fieldTemplates = {
     spawner: {
-        completions: [],
         placeholder: "<spawner>"
     },
     duration: {
@@ -188,12 +229,12 @@ const fieldTemplates = {
         description: "A meta-skill, or an inline skill."
     },
     barColor: {
-        ...listTypeField(bossbarColors, true, "RED"),
+        ...listTypeField(bossbarColors, true, false, "RED"),
         aliases: ["bartimercolor"],
         description: `The color of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarColors, "or")}.`
     },
     barStyle: {
-        ...listTypeField(bossbarStyles, true, "SOLID"),
+        ...listTypeField(bossbarStyles, true, false, "SOLID"),
         aliases: ["bartimerstyle"],
         description: `The style of the bossbar, case sensitive. Can be ${formatListForDoc(bossbarStyles, "or")}.`
     },
@@ -202,7 +243,7 @@ const fieldTemplates = {
         description: "Any material."
     },
     maskShapes: {
-        ...listTypeField(["sphere", "cube"])
+        ...listTypeField(["sphere", "cube"], false, false, "sphere")
     }
 } satisfies { [key: string]: HolderField };
 
@@ -411,7 +452,7 @@ const prefilledFields = {
             aliases: ["dc", "cause"],
             description:
                 "The cause of the damage. This is used in correspondence with [Damage Modifiers](https://git.lumine.io/mythiccraft/MythicMobs/-/wikis/Mobs/DamageModifiers).",
-            completions: damageCauses
+            completions: () => damageCauses
         }
     }
 } satisfies { [key: string]: { [fieldName: string]: HolderField } };
@@ -451,7 +492,7 @@ interface HolderField {
     /**
      * A list of completions that will be displayed when the field is being typed.
      */
-    completions?: string[];
+    completions?: (value: string) => string[];
     pluginReqs?: PluginReq[];
     /**
      * A default value for the field. If this is set, and the user inserts this value as the field's value, a warning would be sent suggesting the user to remove the unnecessary field.
@@ -580,7 +621,14 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         bossBorder: {
             aliases: ["effect:bossBorder", "e:bossBorder"],
-            description: "Draws a world border to create a boss arena."
+            description: "Draws a world border to create a boss arena.",
+            fields: {
+                radius: {
+                    ...fieldTemplates.int,
+                    description: "The radius of the border.",
+                    default: 32
+                }
+            }
         },
         terminateProjectile: {
             aliases: ["endprojectile", "terminateproj", "endproj", "stopprojectile", "stopproj"],
@@ -612,7 +660,17 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         bloodyScreen: {
             aliases: ["effect:bloodyScreen", "e:bloodyScreen", "redScreen", "effect:redScreen", "e:redScreen"],
-            description: "Causes the player's screen to be covered in blood."
+            description: "Causes the player's screen to display the worldborder red vignette, effectively making the screen appear bloody.",
+            fields: {
+                duration: {
+                    ...fieldTemplates.duration,
+                    description: "The duration of the effect."
+                },
+                cancel: {
+                    ...fieldTemplates.booleanDefaultFalse,
+                    description: "If true, the skill will cancel the effect."
+                }
+            }
         },
         mount: {
             aliases: ["vehicle"],
@@ -909,7 +967,13 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         bonemeal: {
             aliases: [],
-            description: "Applies bonemeal to the targeted location."
+            description: "Applies bonemeal to the targeted location.",
+            fields: {
+                blockface: {
+                    ...listTypeField(blockFaces, false, false, "UP"),
+                    description: "The block face to apply bonemeal to."
+                }
+            }
         },
         messagejson: {
             aliases: ["jsonmessage", "jmsg", "jm"],
@@ -1240,7 +1304,83 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         blockWave: {
             aliases: ["effect:blockWave", "e:blockWave"],
-            description: "Temporarily masks a block as a different block."
+            description: "Sends a block flying into the air.",
+            fields: {
+                velocity: {
+                    ...fieldTemplates.float,
+                    aliases: ["v"],
+                    description: "The velocity in which the block should travel.",
+                    default: 0.2
+                },
+                horizontalvelocity: {
+                    ...fieldTemplates.float,
+                    aliases: ["velocityh", "vh"],
+                    description: "The horizontal velocity in which the block should travel.",
+                    default: 0.0
+                },
+                velocityx: {
+                    ...fieldTemplates.float,
+                    aliases: ["vx"],
+                    description: "Additional X velocity in which the block should travel.",
+                    default: 0.0
+                },
+                velocityy: {
+                    ...fieldTemplates.float,
+                    aliases: ["vy"],
+                    description: "Additional Y velocity in which the block should travel.",
+                    default: 0.0
+                },
+                velocityz: {
+                    ...fieldTemplates.float,
+                    aliases: ["vz"],
+                    description: "Additional Z velocity in which the block should travel.",
+                    default: 0.0
+                },
+                radius: {
+                    ...fieldTemplates.float,
+                    aliases: ["r"],
+                    description: "The radius of the wave.",
+                    default: 2
+                },
+                radiusy: {
+                    ...fieldTemplates.float,
+                    aliases: ["ry"],
+                    description: "The radius of the wave in the Y/vertical axis. Defaults to the radius.",
+                    default: 2
+                },
+                noise: {
+                    ...fieldTemplates.float,
+                    aliases: ["n"],
+                    description: "The amount of noise to add to the wave.",
+                    default: 0.0
+                },
+                duration: {
+                    ...fieldTemplates.duration,
+                    aliases: ["d"],
+                    description: "The duration of the wave in ticks.",
+                    default: 15
+                },
+                ignoreair: {
+                    ...fieldTemplates.booleanDefaultTrue,
+                    aliases: ["ia"],
+                    description: "If true, the wave will ignore air blocks."
+                },
+                hidesourceblock: {
+                    ...fieldTemplates.booleanDefaultTrue,
+                    aliases: ["hidesource", "hsb", "hs"],
+                    description: "If true, the wave will hide the source block when creating the falling block entity."
+                },
+                shape: {
+                    ...fieldTemplates.maskShapes,
+                    aliases: ["s"],
+                    description: "The shape of the wave."
+                },
+                material: {
+                    ...fieldTemplates.material,
+                    aliases: ["m"],
+                    description: "The material of the block to create."
+                }
+            }
         },
         lightning: {
             aliases: [],
@@ -1363,7 +1503,25 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         breakBlockAndGiveItem: {
             aliases: ["blockBreakAndGiveItem"],
-            description: "Breaks the block at the target location."
+            description: "Breaks the block at the target location, giving the items to the caster.",
+            fields: {
+                dodrops: {
+                    ...fieldTemplates.booleanDefaultTrue,
+                    aliases: ["drops", "d"],
+                    description: "If true, the mechanic will drop items."
+                },
+                doeffect: {
+                    ...fieldTemplates.booleanDefaultTrue,
+                    aliases: ["effect", "e"],
+                    description: "If true, the mechanic will play the block break sound/particle effects."
+                },
+                usetool: {
+                    ...fieldTemplates.booleanDefaultTrue,
+                    aliases: ["tool", "t"],
+                    description: "If true, the mechanic will use the caster's held item to break the block."
+                },
+                fakelooting: {}
+            }
         },
         pull: {
             aliases: [],
@@ -1552,7 +1710,20 @@ export const data: { mechanics: { [name: string]: Holder }; targeters: { [name: 
         },
         bouncy: {
             aliases: [],
-            description: "Applies an aura to the target that makes it bouncy."
+            description: "Applies an aura to the target that makes it bouncy.",
+            fields: {
+                ...prefilledFields.auraFields,
+                onbounceskill: {
+                    ...fieldTemplates.metaskill,
+                    aliases: ["onbounce", "ob"],
+                    description: "The skill to execute when the entity bounces."
+                },
+                cancelevent: {
+                    ...fieldTemplates.booleanDefaultFalse,
+                    aliases: ["ce", "canceldamage", "cd"],
+                    description: "Whether to cancel the event that triggers the aura."
+                }
+            }
         },
         ondeath: {
             aliases: [],

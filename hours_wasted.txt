@@ -1,0 +1,5 @@
+Hey contributors!
+
+Once you are done with contributing to this project and realized how terrible your life decisions are, please increment this counter to warn any future contributors:
+
+hoursWasted = 35
