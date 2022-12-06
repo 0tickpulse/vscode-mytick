@@ -1,0 +1,15 @@
+{
+    "name": "mythic-language-server",
+    "version": "1.0.0",
+    "description": "A language server for Mythic configurations.",
+    "main": "src/server.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "0TickPulse",
+    "license": "AGPL-3.0-or-later",
+    "dependencies": {
+        "vscode": "^1.1.37",
+        "vscode-languageserver": "^8.0.2"
+    }
+}

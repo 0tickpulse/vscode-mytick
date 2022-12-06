@@ -1,6 +1,9 @@
 import * as data from "./data.js";
 import * as vscServer from "vscode-languageserver/node";
 
+/**
+ * Accepted values that *can be easily converted to strings*.
+ */
 export type LooseString = string | boolean | number;
 
 /**
@@ -48,6 +51,13 @@ export interface HolderField {
     default?: LooseString;
 }
 
+export enum HolderType {
+    mechanic = "mechanic",
+    targeter = "targeter",
+    trigger = "trigger",
+    condition = "condition"
+}
+
 /**
  * A holder is a mechanic, targeter, trigger, or condition. It can have fields, and each field can have a single value.
  *
@@ -66,7 +76,7 @@ export interface Holder {
     /**
      * The type of the holder.
      */
-    type: "mechanic" | "targeter" | "trigger" | "condition";
+    type: HolderType;
     /**
      * Any aliases for the holder. Should not contain the "main" name.
      */
@@ -82,7 +92,7 @@ export interface Holder {
     /**
      * Optional list of examples to be displayed.
      */
-    examples?: {text: string, explanation?: string}[];
+    examples?: { text: string; explanation?: string }[];
     pluginReqs?: string[];
 }
 
@@ -118,9 +128,18 @@ export const generateHover = (name: string, holder: Holder) => {
     if (holder.examples) {
         lines.push("## Examples:");
         // TODO Use the custom language
-        lines.push(...holder.examples.map((example) => `\`\`\`yaml\n${example.text}\n\`\`\`` + (example.explanation ? `\n${example.explanation}` : "")));
+        lines.push(
+            ...holder.examples.map((example) => `\`\`\`yaml\n${example.text}\n\`\`\`` + (example.explanation ? `\n${example.explanation}` : ""))
+        );
     }
     return lines.join("\n\n");
 };
 
-console.log(generateHover("aura", data.output.mechanics.aura));
+console.log(generateHover("aura", data.output.mechanic.aura));
+
+const generatedHovers = Object.fromEntries(
+    Object.entries(data.output).map(([type, holders]) => [
+        type,
+        Object.fromEntries(Object.entries(holders).map(([name, holder]) => [name, generateHover(name, holder as Holder)]))
+    ])
+) as { [key in HolderType]: { [k: string]: string } };
