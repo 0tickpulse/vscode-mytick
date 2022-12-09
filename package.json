@@ -25,7 +25,6 @@
         "vscode:prepublish": "npm run compile",
         "build": "tsc -b",
         "watch": "tsc -w",
-        "pretest": "npm run compile && npm run lintClient && npm run lintServer",
         "lintClient": "eslint client --ext ts",
         "lintServer": "eslint server --ext ts",
         "test": "node ./out/test/runTest.js"
