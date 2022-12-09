@@ -30,17 +30,16 @@ connection.onInitialize((params) => {
 });
 
 connection.onInitialized(() => {
-	if (hasConfigurationCapability) {
-		// Register for all configuration changes.
-		connection.client.register(vscServer.DidChangeConfigurationNotification.type, undefined);
-	}
-	if (hasWorkspaceFolderCapability) {
-		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			connection.console.log('Workspace folder change event received.');
-		});
-	}
+    if (hasConfigurationCapability) {
+        // Register for all configuration changes.
+        connection.client.register(vscServer.DidChangeConfigurationNotification.type, undefined);
+    }
+    if (hasWorkspaceFolderCapability) {
+        connection.workspace.onDidChangeWorkspaceFolders((_event) => {
+            connection.console.log("Workspace folder change event received.");
+        });
+    }
 });
-
 
 // documents.onDidChangeContent((change) => {
 //     validateTextDocument(change.document);

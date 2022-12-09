@@ -6,7 +6,6 @@
 			"es2020"
 		],
 		"outDir": "out",
-		"rootDir": "src",
 		"sourceMap": true
 	},
 	"include": [
