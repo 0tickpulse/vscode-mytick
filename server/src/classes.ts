@@ -10,17 +10,24 @@ export interface YAMLDocument {
 }
 
 export class YAMLDocument implements YAMLDocument {
-    constructor(public readonly uri: string, public readonly languageId: string, public readonly version: number, public readonly content: string) {
-    }
+    constructor(public readonly uri: string, public readonly languageId: string, public readonly version: number, public readonly content: string) {}
 
     getText(): string {
         return this.content;
     }
 
+    /**
+     * NOT IMPLEMENTED YET BECAUSE I'M LAZY
+     * @param offset The offset.
+     */
     positionAt(offset: number): vscode.Position {
         return new vscode.Position(0, 0);
     }
 
+    /**
+     * NOT IMPLEMENTED YET BECAUSE I'M LAZY
+     * @param offset The offset.
+     */
     offsetAt(position: vscode.Position): number {
         return 0;
     }
@@ -34,6 +41,4 @@ export namespace YAMLDocument {
     export function update(document: YAMLDocument, contentChanges: vscode.TextDocumentContentChangeEvent[], version: number): YAMLDocument {
         return document;
     }
-
 }
-
