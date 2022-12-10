@@ -514,7 +514,7 @@ export const defaultFields = {
     },
     [HolderType.condition]: {},
     [HolderType.targeter]: {},
-    [HolderType.trigger]: {}
+    [HolderType.trigger]: {},
 } satisfies { [key in HolderType]: { [name: string]: HolderFieldData } };
 
 export const output = {

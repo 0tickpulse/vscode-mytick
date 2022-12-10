@@ -1,3 +1,7 @@
+/**
+ * An empty interface.
+ */
+export interface _ {}
 
 /**
  * A range in a text document expressed as (zero-based) start and end positions.
@@ -126,4 +130,28 @@ export namespace YAMLDocumentInterface {
     ): YAMLDocumentInterface {
         return document;
     }
+}
+
+export enum DocumentDiagnosticSeverity {
+    /**
+     * Info should be used for diagnostics that are not errors or warnings, but might cause issues.
+     */
+    Info = 0,
+    /**
+     * Warning should be used for diagnostics that will cause issues, but are not fatal.
+     */
+    Warning = 1,
+    /**
+     * Error should be used for diagnostics that will cause issues.
+     */
+    Error = 2
+}
+
+/**
+ * An individual diagnostic for the document, appearing as an underline.
+ */
+export interface DocumentDiagnostic {
+    message: string;
+    range: Range;
+    severity: DocumentDiagnosticSeverity;
 }

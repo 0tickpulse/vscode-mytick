@@ -10,7 +10,7 @@
         "Other"
     ],
     "activationEvents": [
-        "onLanguage:yaml"
+        "onLanguage:mythic"
     ],
     "main": "./client/out/extension.js",
     "contributes": {

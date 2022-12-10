@@ -1,120 +1,131 @@
-/**
- * # YAML Object Types
- *
- * Different object types that can be used in YAML.
- *
- * ## Strings
- *
- * Strings are used to represent a string of text.
- * In YAML, strings can be written in two ways: as plain text or as quoted text.
- * Quoted text can be written using single quotes or double quotes.
- *
- * You can also use multiline strings by using the pipe (`|`) or the greater than (`>`) character.
- *
- * ```yaml
- * # Plain text
- * My name: John Doe
- * # Quoted text
- * My other name: 'James Smith'
- * ```
- *
- * ## Numbers
- *
- * Numbers are used to represent a number.
- * To write numbers in YAML, simply just write the number.
- *
- * ```yaml
- * # Integer
- * My age: 20
- * # Float
- * My height: 1.75
- * ```
- *
- * ## Booleans
- *
- * Booleans are used to represent a boolean value.
- * To write booleans in YAML, simply just write `true` or `false`.
- *
- * ```yaml
- * # Boolean
- * My boolean: true
- * ```
- *
- * ## Arrays
- *
- * Arrays are used to represent a list of values.
- * There are two ways to write arrays in YAML: using the block notation or the flow notation.
- *
- * ```yaml
- * # Block notation
- * My array:
- * - 1
- * - 2
- * - 3
- * # Flow notation
- * My array: [1, 2, 3]
- * ```
- *
- * ## Maps
- *
- * Maps are used to represent a list of key-value pairs.
- * There are two ways to write maps in YAML: using the block notation or the flow notation.
- *
- * ```yaml
- * # Block notation
- * My map:
- *     key1: value1
- *     key2: value2
- *     key3: value3
- * # Flow notation
- * My map: {key1: value1, key2: value2, key3: value3}
- * ```
- *
- * ## Null
- *
- * Null is used to represent a null value.
- * To write null values in YAML, simply just write `null`.
- *
- * ```yaml
- * # Null
- * My dignity: null
- * ```
- */
-export type yamlTypes = "string" | "number" | "boolean" | "array" | "map" | "null";
+import * as yaml from "yaml";
 
-export interface yamlType {
-    acceptIf: (value: string) => boolean;
-    parse: (value: string) => any;
-    stringify: (value: any) => string;
+export interface YAMLValue {
+    readonly value: any;
+    toString(): string;
+    acceptString(str: string): boolean;
+    getBaseObject(): any;
 }
 
-/**
- * # Mythic Object Types
- * 
- * Different object types that YAML object types represent.
- * 
- * ## Skill
- * 
- * Skills are used to represent a skill.
- * 
- * ```yaml
- * # Skill
- * - projectile{} @Target
- * ```
- * 
- * ## Material
- * 
- * Materials are used to represent a material.
- * 
- * ```yaml
- * # Material
- * Id: STONE
- * ```
- */
-export type mythicTypes = "skill" | "material"
+export const getValue = (value: YAMLValue) => value.value;
 
-export interface mythicType {
-    acceptIf: (value: string) => boolean;
-    parse: (value: string) => any;
-    stringify: (value: any) => string;
+export class YAMLNumber implements YAMLValue {
+    constructor(public readonly value: number) {}
+    public toString() {
+        return this.value.toString();
+    }
+    public acceptString(str: string): boolean {
+        return !isNaN(Number(str));
+    }
+    public getBaseObject() {
+        return this.value;
+    }
 }
+
+export class YAMLString implements YAMLValue {
+    constructor(public readonly value: string) {}
+    public toString() {
+        return this.value;
+    }
+    public acceptString(str: string): boolean {
+        return true;
+    }
+    public getBaseObject() {
+        return this.value;
+    }
+}
+
+export class YAMLBoolean implements YAMLValue {
+    constructor(public readonly value: boolean) {}
+    public toString() {
+        return this.value.toString();
+    }
+    public acceptString(str: string): boolean {
+        return str === "true" || str === "false";
+    }
+    public getBaseObject() {
+        return this.value;
+    }
+}
+
+export class YAMLNull implements YAMLValue {
+    public readonly value = null;
+    constructor() {}
+    public toString() {
+        return "null";
+    }
+    public acceptString(str: string): boolean {
+        return str === "null";
+    }
+    public getBaseObject() {
+        return this.value;
+    }
+}
+
+export class YAMLArray implements YAMLValue {
+    constructor(public readonly value: YAMLValue[]) {}
+    public toString() {
+        return this.value.map((v) => v.getBaseObject()).join(", ");
+    }
+    public acceptString(str: string): boolean {
+        return yaml.parse(str) instanceof Array;
+    }
+    public getBaseObject() {
+        return this.value.map((v) => v.getBaseObject());
+    }
+}
+
+export class YAMLMap implements YAMLValue {
+    constructor(public readonly value: { [key: string]: YAMLValue }) {}
+    public toString() {
+        return yaml.stringify(this.getBaseObject());
+    }
+    public acceptString(str: string): boolean {
+        return yaml.parse(str) instanceof Object;
+    }
+    public getBaseObject() {
+        return Object.fromEntries(Object.entries(this.value).map(([key, value]) => [key, value.getBaseObject()]));
+    }
+}
+
+export type YAMLBaseType = number | string | boolean | null | YAMLBaseType[] | { [key: string]: YAMLBaseType };
+
+export const toYaml = (value: YAMLBaseType): YAMLValue => {
+    if (typeof value === "number") {
+        return new YAMLNumber(value);
+    }
+    if (typeof value === "string") {
+        return new YAMLString(value);
+    }
+    if (typeof value === "boolean") {
+        return new YAMLBoolean(value);
+    }
+    if (value === null) {
+        return new YAMLNull();
+    }
+    if (value instanceof Array) {
+        return new YAMLArray(value.map((v) => toYaml(v)));
+    }
+    if (value instanceof Object) {
+        return new YAMLMap(Object.fromEntries(Object.entries(value).map(([key, value]) => [key, toYaml(value)])));
+    }
+    throw new Error("Invalid YAMLBaseType");
+};
+
+// test
+const test = new YAMLMap({
+    test: toYaml("test"),
+    test2: toYaml(2),
+    test3: toYaml(true),
+    test4: toYaml(null),
+    test5: toYaml(["test", 2, true, null]),
+    test6: toYaml({
+        test: "test",
+        test2: 2,
+        test3: true,
+        test4: null,
+        test5: ["test", 2, true, null]
+    })
+});
+
+console.log(test.getBaseObject());

@@ -1,6 +1,6 @@
 # VSCode Mythic Extension
 
-## [Hours wasted](./hours_wasted.txt)
+## [TODO](./todo.txt)
 
 ## Credits
 
