@@ -3,16 +3,22 @@ import * as lsp from "vscode-languageserver/node";
 import { handleHover } from "./modules/hover.js";
 import { handleInit } from "./modules/init.js";
 import { handleCompletion } from "./modules/completion.js";
+import { handleCompletionResolve } from "./modules/completionResolve.js";
 import * as classes from "./classes.js";
 
-export const server: classes.Server = { connection: lsp.createConnection(lsp.ProposedFeatures.all), documents: new lsp.TextDocuments(TextDocument) };
+export const server: classes.Server = {
+    connection: lsp.createConnection(lsp.ProposedFeatures.all),
+    documents: new lsp.TextDocuments(TextDocument)
+};
 
 function registerHandlers() {
-    const { connection } = server;
+    const { connection, documents } = server;
     connection.onInitialize(handleInit);
     connection.onHover(handleHover);
     connection.onCompletion(handleCompletion);
+    connection.onCompletionResolve(handleCompletionResolve);
 }
+
 function main() {
     const { connection, documents } = server;
     registerHandlers();
@@ -22,6 +28,3 @@ function main() {
 if (require.main === module) {
     main();
 }
-// documents.onDidChangeContent((change) => {
-//     validateTextDocument(change.document);
-// });
