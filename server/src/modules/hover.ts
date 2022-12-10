@@ -1,8 +1,8 @@
 import { Hover } from "vscode-languageserver";
-import { connection } from "../server";
+import { server } from "../server.js";
 
 export function handleHover(): Hover | null {
-    connection.window.showInformationMessage("Hovering!");
+    server.connection.window.showInformationMessage("Hovering!");
     return {
         contents: "This is a hover"
     };

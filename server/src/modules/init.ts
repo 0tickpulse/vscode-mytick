@@ -1,11 +1,15 @@
 import * as lsp from "vscode-languageserver/node";
-import { connection } from "../server";
+import { server } from "../server.js";
 
-export function handleInit() {
-    connection.window.showInformationMessage("Mythic Language Server initialized!");
+export function handleInit(): lsp.InitializeResult {
+    server.connection.window.showInformationMessage("Mythic Language Server initialized!");
     return {
         capabilities: {
-            hoverProvider: true
+            hoverProvider: true,
+            completionProvider: {
+                resolveProvider: true,
+                triggerCharacters: ["@", "?", "~"]
+            }
         }
     };
 }
