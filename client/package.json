@@ -9,7 +9,6 @@
     "author": "0TickPulse",
     "license": "AGPL-3.0-or-later",
     "dependencies": {
-        "@vscode/test-electron": "^2.2.1",
         "vscode-languageclient": "^8.0.2"
     },
     "devDependencies": {

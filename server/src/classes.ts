@@ -1,15 +1,96 @@
-import * as vscode from "vscode";
 
-export interface YAMLDocument {
+/**
+ * A range in a text document expressed as (zero-based) start and end positions.
+ *
+ * If you want to specify a range that contains a line including the line ending
+ * character(s) then use an end position denoting the start of the next line.
+ * For example:
+ * ```ts
+ * {
+ *     start: { line: 5, character: 23 }
+ *     end : { line 6, character : 0 }
+ * }
+ * ```
+ */
+export interface Range {
+    /**
+     * The range's start position
+     */
+    start: Position;
+    /**
+     * The range's end position.
+     */
+    end: Position;
+}
+
+/**
+ * An event describing a change to a text document. If range and rangeLength are omitted
+ * the new text is considered to be the full content of the document.
+ */
+export declare type TextDocumentContentChangeEvent =
+    | {
+          /**
+           * The range of the document that changed.
+           */
+          range: Range;
+          /**
+           * The optional length of the range that got replaced.
+           *
+           * @deprecated use range instead.
+           */
+          rangeLength?: number;
+          /**
+           * The new text for the provided range.
+           */
+          text: string;
+      }
+    | {
+          /**
+           * The new text of the whole document.
+           */
+          text: string;
+      };
+/**
+ * Position in a text document expressed as zero-based line and character offset.
+ * The offsets are based on a UTF-16 string representation. So a string of the form
+ * `a𐐀b` the character offset of the character `a` is 0, the character offset of `𐐀`
+ * is 1 and the character offset of b is 3 since `𐐀` is represented using two code
+ * units in UTF-16.
+ *
+ * Positions are line end character agnostic. So you can not specify a position that
+ * denotes `\r|\n` or `\n|` where `|` represents the character offset.
+ */
+export class Position {
+    public constructor(
+        /**
+         * Line position in a document (zero-based).
+         * If a line number is greater than the number of lines in a document, it defaults back to the number of lines in the document.
+         * If a line number is negative, it defaults to 0.
+         */
+        public line: number,
+        /**
+         * Character offset on a line in a document (zero-based). Assuming that the line is
+         * represented as a string, the `character` value represents the gap between the
+         * `character` and `character + 1`.
+         *
+         * If the character value is greater than the line length it defaults back to the
+         * line length.
+         * If a line number is negative, it defaults to 0.
+         */
+        public character: number
+    ) {}
+}
+
+export interface YAMLDocumentInterface {
     readonly uri: string;
     readonly languageId: string;
     readonly version: number;
     getText(): string;
-    positionAt(offset: number): vscode.Position;
-    offsetAt(position: vscode.Position): number;
+    positionAt(offset: number): Position;
+    offsetAt(position: Position): number;
 }
 
-export class YAMLDocument implements YAMLDocument {
+export class YAMLDocument implements YAMLDocumentInterface {
     constructor(public readonly uri: string, public readonly languageId: string, public readonly version: number, public readonly content: string) {}
 
     getText(): string {
@@ -20,25 +101,29 @@ export class YAMLDocument implements YAMLDocument {
      * NOT IMPLEMENTED YET BECAUSE I'M LAZY
      * @param offset The offset.
      */
-    positionAt(offset: number): vscode.Position {
-        return new vscode.Position(0, 0);
+    positionAt(offset: number): Position {
+        return new Position(0, 0);
     }
 
     /**
      * NOT IMPLEMENTED YET BECAUSE I'M LAZY
      * @param offset The offset.
      */
-    offsetAt(position: vscode.Position): number {
+    offsetAt(position: Position): number {
         return 0;
     }
 }
 
-export namespace YAMLDocument {
-    export function create(uri: string, languageId: string, version: number, content: string): YAMLDocument {
+export namespace YAMLDocumentInterface {
+    export function create(uri: string, languageId: string, version: number, content: string): YAMLDocumentInterface {
         return new YAMLDocument(uri, languageId, version, content);
     }
 
-    export function update(document: YAMLDocument, contentChanges: vscode.TextDocumentContentChangeEvent[], version: number): YAMLDocument {
+    export function update(
+        document: YAMLDocumentInterface,
+        contentChanges: TextDocumentContentChangeEvent[],
+        version: number
+    ): YAMLDocumentInterface {
         return document;
     }
 }
