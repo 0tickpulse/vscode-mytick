@@ -13,8 +13,8 @@
 // - blockmask mechanic
 // - blockphysics mechanic
 // - blockunmask mechanic
-import materialTypes from "./materials.js";
-import { Holder, HolderField, HolderType, LooseString } from "./hoverManager.js";
+import materialTypes from "../materials.js";
+import { HolderData, HolderFieldData, HolderType, LooseString } from "./dataProcessor.js";
 
 /**
  * A list of plugins, modules, etc. that some holders and fields require.
@@ -175,8 +175,8 @@ const maxInt = 2147483647;
  * @param list A list of strings.
  * @param caseSensitive Whether the validation should be case sensitive.
  */
-const listTypeField = (list: string[], caseSensitive: boolean = false, array: boolean = false, defaultValue?: string): HolderField => {
-    const output: HolderField = {
+const listTypeField = (list: string[], caseSensitive: boolean = false, array: boolean = false, defaultValue?: string): HolderFieldData => {
+    const output: HolderFieldData = {
         completions: () => list,
         validator: caseSensitive ? (value: string) => value in list : (value: string) => includesCaseInsensitive(value, list)
     };
@@ -247,27 +247,27 @@ const fieldTemplates = {
     maskShapes: {
         ...listTypeField(["sphere", "cube"], false, false, "sphere")
     }
-} satisfies { [key: string]: HolderField };
+} satisfies { [key: string]: HolderFieldData };
 
 /**
  * A collection of functions that generate a field dynamically from inputs.
  */
 const dynamicTemplates = {
-    intRange: (min: number, max: number): HolderField => ({
+    intRange: (min: number, max: number): HolderFieldData => ({
         description: `An integer between ${min} and ${max}.`,
         validator: (value: string) => {
             const parsed = parseInt(value);
             return !Number.isNaN(parsed) && parsed >= min && parsed <= max;
         }
     }),
-    floatRange: (min: number, max: number): HolderField => ({
+    floatRange: (min: number, max: number): HolderFieldData => ({
         description: `A floating point number between ${min} and ${max}.`,
         validator: (value: string) => {
             const parsed = parseFloat(value);
             return !Number.isNaN(parsed) && parsed >= min && parsed <= max;
         }
     })
-} satisfies { [key: string]: (...args: any[]) => HolderField };
+} satisfies { [key: string]: (...args: any[]) => HolderFieldData };
 
 const prefilledFields = {
     /** Fields for auras */
@@ -457,7 +457,7 @@ const prefilledFields = {
             completions: () => damageCauses
         }
     }
-} satisfies { [key: string]: { [fieldName: string]: HolderField } };
+} satisfies { [key: string]: { [fieldName: string]: HolderFieldData } };
 
 export const defaultFields = {
     [HolderType.mechanic]: {
@@ -515,7 +515,7 @@ export const defaultFields = {
     [HolderType.condition]: {},
     [HolderType.targeter]: {},
     [HolderType.trigger]: {}
-} satisfies { [key in HolderType]: { [name: string]: HolderField } };
+} satisfies { [key in HolderType]: { [name: string]: HolderFieldData } };
 
 export const output = {
     [HolderType.mechanic]: {
@@ -2902,4 +2902,4 @@ export const output = {
         }
     },
     [HolderType.trigger]: {}
-} satisfies { [key in HolderType]: { [name: string]: Holder } };
+} satisfies { [key in HolderType]: { [name: string]: HolderData } };

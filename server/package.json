@@ -9,6 +9,7 @@
     "author": "0TickPulse",
     "license": "AGPL-3.0-or-later",
     "dependencies": {
+        "tokenizr": "^1.6.7",
         "vscode-languageserver": "^8.0.2"
     },
     "devDependencies": {

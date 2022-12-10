@@ -33,18 +33,12 @@ connection.onInitialize((params) => {
 // hover
 connection.onHover((params) => {
     connection.console.log(`Hover detected!`);
-    const document = documents.get(params.textDocument.uri);
-    if (document) {
-        const position = params.position;
-        const line = document.getText().split("\r")[position.line];
-        const word = line.split(" ")[position.character];
-        return {
-            contents: {
-                kind: vscServer.MarkupKind.Markdown,
-                value: `**${word}**`
-            }
-        };
-    }
+    return {
+        contents: {
+            kind: vscServer.MarkupKind.Markdown,
+            value: `**Hello**`
+        }
+    };
 });
 
 connection.onInitialized(() => {

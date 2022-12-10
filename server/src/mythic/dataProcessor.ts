@@ -1,4 +1,4 @@
-import * as data from "./data.js";
+import * as data from "./mythicData.js";
 import * as vscServer from "vscode-languageserver/node";
 
 /**
@@ -19,7 +19,7 @@ export type LooseString = string | boolean | number;
  * In this example, the field `onTick` has the value `MySkill`.
  *
  */
-export interface HolderField {
+export interface HolderFieldData {
     /**
      * Any aliases for the field. Should not contain the "main" name.
      */
@@ -72,7 +72,7 @@ export enum HolderType {
  * * `projectile` has a field `onTick` with the value `MySkill`.
  * * `Forward` has a field `f` with the value `10`.
  */
-export interface Holder {
+export interface HolderData {
     /**
      * The type of the holder.
      */
@@ -88,7 +88,7 @@ export interface Holder {
     /**
      * A list of valid fields that the holder can have. Keep in mind that you do not need to include {@link defaultFields} here.
      */
-    fields?: { [key: string]: HolderField };
+    fields?: { [key: string]: HolderFieldData };
     /**
      * Optional list of examples to be displayed.
      */
@@ -101,7 +101,7 @@ export interface Holder {
  * @param name The name of the holder.
  * @param holder The holder itself.
  */
-export const generateHover = (name: string, holder: Holder) => {
+export const generateHover = (name: string, holder: HolderData) => {
     const typeString = holder.type.slice(0, 1).toUpperCase() + holder.type.slice(1);
     const lines: string[] = [];
     lines.push(`# ${typeString}: ${name}`);
@@ -135,11 +135,9 @@ export const generateHover = (name: string, holder: Holder) => {
     return lines.join("\n\n");
 };
 
-console.log(generateHover("aura", data.output.mechanic.aura));
-
 const generatedHovers = Object.fromEntries(
     Object.entries(data.output).map(([type, holders]) => [
         type,
-        Object.fromEntries(Object.entries(holders).map(([name, holder]) => [name, generateHover(name, holder as Holder)]))
+        Object.fromEntries(Object.entries(holders).map(([name, holder]) => [name, generateHover(name, holder as HolderData)]))
     ])
 ) as { [key in HolderType]: { [k: string]: string } };

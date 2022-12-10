@@ -1,0 +1,28 @@
+{
+    "scopeName": "source.mythic",
+    "repository": {
+        "fields-expr": {
+            "begin": "{",
+            "end": "}",
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.fields-expr.begin.mythic"
+                }
+            },
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.fields-expr.end.mythic"
+                }
+            },
+            "name": "meta.fields-expr.mythic",
+            "patterns": [
+                {
+                    "include": "#single-field-expr"
+                }
+            ]
+        },
+        "single-field-expr": {
+            "match": ""
+        }
+    }
+}
