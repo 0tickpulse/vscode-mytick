@@ -22,9 +22,9 @@ function registerHandlers() {
 function main() {
     const { connection, documents } = server;
     registerHandlers();
-    documents.listen(connection);
     connection.listen();
 }
+
 if (require.main === module) {
     main();
 }
