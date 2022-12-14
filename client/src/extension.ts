@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
     const clientOptions: vscClient.LanguageClientOptions = {
-        documentSelector: [{ scheme: "file", language: "yaml" }]
+        documentSelector: [{ scheme: "file", language: "mythic" }]
     };
 
     client = new vscClient.LanguageClient("mythicLanguageServer", "Mythic Language Server", serverOptions, clientOptions);

@@ -1,7 +1,7 @@
-import { CompletionItem } from "vscode-languageserver/node";
+import { CompletionItem, RequestHandler } from "vscode-languageserver/node";
 import { server } from "../server.js";
 
-export function handleCompletionResolve(item: CompletionItem): CompletionItem {
+export const handleCompletionResolve: RequestHandler<CompletionItem, CompletionItem, void> = (item: CompletionItem): CompletionItem => {
     server.connection.window.showInformationMessage("Completion resolve!");
     return item;
-}
+};

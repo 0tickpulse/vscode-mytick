@@ -14,7 +14,8 @@
 // - blockphysics mechanic
 // - blockunmask mechanic
 import materialTypes from "../materials.js";
-import { HolderData, HolderFieldData, HolderType, LooseString } from "./dataProcessor.js";
+import { HolderData, HolderFieldData, LooseString } from "./dataProcessor.js";
+import { HolderType } from "./HolderType.js";
 
 /**
  * A list of plugins, modules, etc. that some holders and fields require.

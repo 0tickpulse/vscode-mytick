@@ -1,7 +1,19 @@
 import { server } from "../server.js";
-import { CompletionItem, CompletionItemKind, TextDocumentPositionParams } from "vscode-languageserver/node";
+import {
+    CompletionItem,
+    CompletionItemKind,
+    CompletionList,
+    CompletionParams,
+    ServerRequestHandler,
+    TextDocumentPositionParams
+} from "vscode-languageserver/node";
 
-export function handleCompletion(params: TextDocumentPositionParams): CompletionItem[] {
+export const handleCompletion: ServerRequestHandler<
+    CompletionParams,
+    CompletionItem[] | CompletionList | undefined | null,
+    CompletionItem[],
+    void
+> = (params: TextDocumentPositionParams): CompletionItem[] => {
     server.connection.window.showInformationMessage("Completion!");
     return [
         {
@@ -10,4 +22,4 @@ export function handleCompletion(params: TextDocumentPositionParams): Completion
             data: 1
         }
     ];
-}
+};

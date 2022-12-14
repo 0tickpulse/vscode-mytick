@@ -5,6 +5,8 @@ import { handleInit } from "./modules/init.js";
 import { handleCompletion } from "./modules/completion.js";
 import { handleCompletionResolve } from "./modules/completionResolve.js";
 import * as classes from "./classes.js";
+import * as yaml from "yaml";
+import { generatedHovers } from "./mythic/dataProcessor.js";
 
 export const server: classes.Server = {
     connection: lsp.createConnection(lsp.ProposedFeatures.all),
@@ -23,7 +25,10 @@ function main() {
     const { connection, documents } = server;
     registerHandlers();
     connection.listen();
+    documents.listen(connection);
 }
+
+export const hovers = generatedHovers;
 
 if (require.main === module) {
     main();

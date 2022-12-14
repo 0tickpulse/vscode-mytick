@@ -16,10 +16,13 @@
     "contributes": {
         "languages": [
             {
+                "icon": {
+                    "light": "./icons/mythicicon.png",
+                    "dark": "./icons/mythicicon.png"
+                },
                 "id": "mythic",
                 "aliases": [
-                    "YAML",
-                    "yaml"
+                    "MythicYAML"
                 ],
                 "extensions": [
                     ".yaml",
@@ -27,13 +30,6 @@
                     ".mythic"
                 ],
                 "configuration": "./language-configuration.json"
-            }
-        ],
-        "grammars": [
-            {
-                "language": "mythic",
-                "scopeName": "source.mythic",
-                "path": "./syntaxes/mythic.tmLanguage.json"
             }
         ],
         "commands": [

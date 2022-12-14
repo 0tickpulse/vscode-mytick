@@ -1,5 +1,6 @@
 import * as data from "./mythicData.js";
 import * as vscServer from "vscode-languageserver/node";
+import { HolderType } from "./HolderType.js";
 
 /**
  * Accepted values that *can be easily converted to strings*.
@@ -49,13 +50,6 @@ export interface HolderFieldData {
      * Don't worry about using booleans, numbers, or strings as the default value.
      */
     default?: LooseString;
-}
-
-export enum HolderType {
-    mechanic = "mechanic",
-    targeter = "targeter",
-    trigger = "trigger",
-    condition = "condition"
 }
 
 /**
@@ -111,10 +105,12 @@ export const generateHover = (name: string, holder: HolderData) => {
     if (holder.fields) {
         lines.push("## Fields");
         for (const [fieldName, field] of Object.entries(holder.fields)) {
-            lines.push(`* \`${fieldName}` + (field.placeholder !== undefined ? `=${field.placeholder}` : "") + `\``);
-            if (field.description !== undefined) {
-                lines.push(field.description ?? "");
-            }
+            lines.push(
+                `* \`${fieldName}` +
+                    (field.placeholder !== undefined ? `=${field.placeholder}` : "") +
+                    `\`` +
+                    (field.description !== undefined ? ` - ${field.description}` : "")
+            );
             if (field.pluginReqs) {
                 lines.push("### Required plugins:");
                 lines.push(...field.pluginReqs.map((req) => `* ${req}`));
@@ -135,7 +131,7 @@ export const generateHover = (name: string, holder: HolderData) => {
     return lines.join("\n\n");
 };
 
-const generatedHovers = Object.fromEntries(
+export const generatedHovers = Object.fromEntries(
     Object.entries(data.output).map(([type, holders]) => [
         type,
         Object.fromEntries(Object.entries(holders).map(([name, holder]) => [name, generateHover(name, holder as HolderData)]))

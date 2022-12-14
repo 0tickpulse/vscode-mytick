@@ -71,7 +71,8 @@
         }
     },
     "indentationRules": {
-        "increaseIndentPattern": "^\\s*.*(:|-) ?(&amp;\\w+)?(\\{[^}\"']*|\\([^)\"']*)?$",
+        // Matches "asdf:" and "a=["
+        "increaseIndentPattern": "^.*(\\:|=\\[)$",
         "decreaseIndentPattern": "^\\s+\\}$"
     },
     "wordPattern": "(^.?[^\\s]+)+|([^\\s\n={[][\\w\\-\\.\/$%&*:\"']+)"
