@@ -8,6 +8,6 @@ hours wasted = 68
 
 ## TODO LIST (ordered by priority)
 
-* [ ] Fix hovers (0TickPulse)
+* [X] Fix hovers (0TickPulse)
 * [ ] Add more data (0TickPulse)
 * [ ] Syntax highlighting (💀) (0TickPulse)

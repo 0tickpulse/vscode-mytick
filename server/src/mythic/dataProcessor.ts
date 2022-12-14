@@ -112,13 +112,13 @@ export const generateHover = (name: string, holder: HolderData) => {
                     (field.description !== undefined ? ` - ${field.description}` : "")
             );
             if (field.pluginReqs) {
-                lines.push("### Required plugins:");
+                lines.push("### !! Required plugins:");
                 lines.push(...field.pluginReqs.map((req) => `* ${req}`));
             }
         }
     }
     if (holder.pluginReqs) {
-        lines.push("## Required plugins:");
+        lines.push("## !! Required plugins:");
         lines.push(...holder.pluginReqs.map((req) => `* ${req}`));
     }
     if (holder.examples) {
