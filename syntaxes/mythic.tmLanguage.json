@@ -22,7 +22,10 @@
             ]
         },
         "single-field-expr": {
-            "match": ""
+            "include": "#inline-skill-expr"
+        },
+        "#inline-skill-expr": {
+
         }
     }
 }

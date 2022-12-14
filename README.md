@@ -1,6 +1,6 @@
 # VSCode Mythic Extension
 
-## [TODO](./todo.txt)
+## [TODO](./todo.md)
 
 ## Credits
 
